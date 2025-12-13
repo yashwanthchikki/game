@@ -1,5 +1,7 @@
 const express = require('express');
+const fs = require('fs');
 const http = require('http');
+const path = require('path');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
@@ -7,12 +9,10 @@ const jwt = require('jsonwebtoken');
 const db = require('./database');
 const { authenticateToken, authenticateSocket, SECRET_KEY } = require('./authMiddleware');
 
-const path = require('path');
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
 const server = http.createServer(app);
@@ -25,12 +25,10 @@ const io = new Server(server, {
 
 const PORT = 5001;
 
-// Basic health check
 app.get('/health', (req, res) => {
     res.send('Server is running. Total Online: ' + (onlinePlayersCounter ? onlinePlayersCounter.value : 0));
 });
 
-// --- Friend System Routes ---
 app.post('/api/friends/connect', authenticateToken, (req, res) => {
     const { friendId } = req.body;
     const userId = req.user.id;
@@ -44,21 +42,11 @@ app.post('/api/friends/connect', authenticateToken, (req, res) => {
 
 app.post('/api/friends/accept', authenticateToken, (req, res) => {
     const { friendId } = req.body;
-    const userId = req.user.id; // User accepting the request
-
-    // We need to update both directions to be fully "connected" or just one?
-    // Usually "friends" is symmetric. 
-    // Let's assume the request was from friendId -> userId. 
-    // Wait, my schema has (user_id, friend_id). 
-    // If A req B, row: A, B, pending. B accepts -> Update row to accepted.
-    // But B accepting means B is user_id? No.
-    // Let's look for the row where friend_id is ME and user_id is THE REQUESTER.
+    const userId = req.user.id;
 
     db.run(`UPDATE friends SET status = 'accepted' WHERE user_id = ? AND friend_id = ?`,
         [friendId, userId], (err) => {
             if (err) return res.status(500).json({ error: 'Database error' });
-            // Also insert reverse relation for easier querying? Or just handle in query.
-            // For simplicity, insert reverse relation too.
             db.run(`INSERT OR REPLACE INTO friends (user_id, friend_id, status) VALUES (?, ?, 'accepted')`,
                 [userId, friendId], () => { });
             res.json({ success: true });
@@ -95,14 +83,10 @@ app.get('/api/users/search', authenticateToken, (req, res) => {
     });
 });
 
-// --- Ranking & Profile Routes ---
-
 app.get('/api/rankings', (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
 
-    // Join users with profiles to get scores
-    // Using profiles.score now
     const query = `
         SELECT u.username, 
                CAST(IFNULL(p.score, 0) AS INTEGER) as score,
@@ -123,7 +107,6 @@ app.post('/api/profile/update', authenticateToken, (req, res) => {
     const { customSections, country, company } = req.body;
     const userId = req.user.id;
 
-    // Upsert profile
     const query = `
         INSERT INTO profiles (user_id, custom_sections, country, company) 
         VALUES (?, ?, ?, ?)
@@ -176,7 +159,6 @@ app.get('/api/profile/get', authenticateToken, (req, res) => {
     });
 });
 
-// Auth Routes
 app.post('/api/register', (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
@@ -205,7 +187,7 @@ app.post('/api/login', (req, res) => {
         if (!passwordIsValid) return res.status(401).json({ error: 'Invalid password' });
 
         const token = jwt.sign({ id: user.id, username: user.username }, SECRET_KEY, { expiresIn: '24h' });
-        if (onlinePlayersCounter) onlinePlayersCounter(1); // Increment online count
+        if (onlinePlayersCounter) onlinePlayersCounter(1);
         res.json({ token, username: user.username });
     });
 });
@@ -235,13 +217,10 @@ app.post('/api/auth/change-password', authenticateToken, (req, res) => {
     });
 });
 
-// Socket Middleware
 io.use(authenticateSocket);
 
-// Track users: socket.id -> user info
-const connectedUsers = new Map(); // socketId -> { userId, username, roomId }
+const connectedUsers = new Map();
 
-// --- Game Engine Integration ---
 const GameState = require('./game_engine/GameState');
 const DecisionSystem = require('./game_engine/DecisionSystem');
 const PythonBridge = require('./game_engine/PythonBridge');
@@ -253,18 +232,17 @@ let onlinePlayersCounter;
     onlinePlayersCounter = await scoreCounter.setup('total_online_players', 0, 1, 1);
 })();
 
-const activeGames = new Map(); // roomId -> { gameState, decisionSystem, pythonBridge, intervals: { execution, animation }, playerSockets, playerCode, isPublic }
+const activeGames = new Map();
 
 const startGame = (roomId) => {
     let gameData = activeGames.get(roomId);
-    if (gameData && gameData.gameState) return; // Already running with state
+    if (gameData && gameData.gameState) return;
 
     console.log(`Starting game engine for room ${roomId}`);
     const gameState = new GameState();
     const decisionSystem = new DecisionSystem();
     const pythonBridge = new PythonBridge();
 
-    // If gameData exists (from lobby), upgrade it. If not, create new
     if (!gameData) {
         gameData = {
             playerSockets: {},
@@ -273,7 +251,6 @@ const startGame = (roomId) => {
         activeGames.set(roomId, gameData);
     }
 
-    // Attach Game Systems
     gameData.gameState = gameState;
     gameData.decisionSystem = decisionSystem;
     gameData.pythonBridge = pythonBridge;
@@ -283,10 +260,8 @@ const startGame = (roomId) => {
         2: { code: '', stack: [] }
     };
 
-    // Notify start - Move players to Arena IMMEDIATELY
     io.to(roomId).emit('game_start', { roomId });
 
-    // Start Match Countdown
     let countdown = 3;
     const countdownInterval = setInterval(() => {
         io.to(roomId).emit('match_countdown', { count: countdown });
@@ -301,7 +276,6 @@ const startGame = (roomId) => {
         const gData = activeGames.get(rId);
         if (!gData) return;
 
-        // 1. Execution Loop (900ms)
         gData.intervals.execution = setInterval(async () => {
             const args = {
                 p1_hp: gameState.players[1].hp,
@@ -317,7 +291,6 @@ const startGame = (roomId) => {
                 p2_points: gameState.players[2].points,
             };
 
-            // Execute P1 Code
             let p1Actions = ['idle', 'idle', 'idle'];
             if (gData.playerCode && gData.playerCode[1]) {
                 const p1Data = gData.playerCode[1];
@@ -347,7 +320,6 @@ const startGame = (roomId) => {
                 }
             }
 
-            // Execute P2 Code
             let p2Actions = ['idle', 'idle', 'idle'];
             if (gData.playerCode && gData.playerCode[2]) {
                 const p2Data = gData.playerCode[2];
@@ -377,7 +349,6 @@ const startGame = (roomId) => {
                 }
             }
 
-            // Process 3 Turns
             for (let i = 0; i < 3; i++) {
                 const act1 = p1Actions[i];
                 const act2 = p2Actions[i];
@@ -391,22 +362,13 @@ const startGame = (roomId) => {
                 });
             }
 
-            // Emit updates
             io.to(rId).emit('game_stats', {
                 players: gameState.players,
                 timer: gameState.timer
             });
 
-            // Decrement timer
             if (gameState.timer > 0) {
                 gameState.timer--;
-
-                // Ki regeneration is handled by function count in DecisionSystem
-                // if (gameState.timer % 5 === 0) {
-                //    [1, 2].forEach(id => {
-                //        gameState.players[id].ki = Math.min(100, gameState.players[id].ki + 5);
-                //    });
-                // }
             } else {
                 if (gameState.round < 3) {
                     gameState.round++;
@@ -414,7 +376,6 @@ const startGame = (roomId) => {
                     gameState.resetRound();
                     io.to(rId).emit('round_start', { round: gameState.round });
                 } else {
-                    // Game Over
                     clearInterval(gData.intervals.execution);
                     clearInterval(gData.intervals.animation);
                     gameState.messageQueue = [];
@@ -443,7 +404,7 @@ const startGame = (roomId) => {
                     };
 
                     if (winnerId === 'draw') {
-                        updateScore(gData.playerUsernames[1], 50); // Points for draw?
+                        updateScore(gData.playerUsernames[1], 50);
                         updateScore(gData.playerUsernames[2], 50);
                     } else {
                         updateScore(gData.playerUsernames[winnerId], 100);
@@ -454,14 +415,12 @@ const startGame = (roomId) => {
                 }
             }
 
-            // Check Death -> Force Round End
             if (gameState.players[1].hp <= 0 || gameState.players[2].hp <= 0) {
-                gameState.timer = 0; // Force end of round/game
+                gameState.timer = 0;
             }
 
         }, 900);
 
-        // 2. Animation Loop (400ms)
         gData.intervals.animation = setInterval(() => {
             if (gameState.messageQueue.length > 0) {
                 const action = gameState.messageQueue.shift();
@@ -480,7 +439,7 @@ io.on('connection', (socket) => {
         const user = connectedUsers.get(socket.id);
         if (user) {
             connectedUsers.delete(socket.id);
-            if (onlinePlayersCounter) onlinePlayersCounter(-1); // Decrement
+            if (onlinePlayersCounter) onlinePlayersCounter(-1);
         }
     });
 
@@ -493,15 +452,13 @@ io.on('connection', (socket) => {
         const userData = connectedUsers.get(socket.id);
         if (userData) userData.roomId = roomId;
 
-
-        // Initialize basic game data placeholder so it appears in lists
         activeGames.set(roomId, {
-            gameState: null, // Will init on start
+            gameState: null,
             isPublic: !!isPublic,
-            password, // Store password
+            password,
             playerSockets: { 1: socket.id },
             playerUsernames: { 1: socket.user.username },
-            waiting: true // Flag to show it's in lobby state
+            waiting: true
         });
 
         socket.emit('room_created', { roomId, password });
@@ -537,21 +494,17 @@ io.on('connection', (socket) => {
 
     socket.on('join_room', ({ roomId, password }) => {
         console.log(`${socket.user.username} joining room ${roomId}`);
-        // In a real app, verify password against stored room info.
         socket.join(roomId);
         const userData = connectedUsers.get(socket.id);
         if (userData) userData.roomId = roomId;
 
         socket.emit('join_success', { roomId });
 
-        // Notify others in the room
         socket.to(roomId).emit('user_joined', { username: socket.user.username, socketId: socket.id });
 
-        // Check if game is already active (Reconnection) or Waiting
         if (activeGames.has(roomId)) {
             const gameData = activeGames.get(roomId);
 
-            // Reconnection Logic
             if (gameData.playerUsernames[1] === socket.user.username) {
                 gameData.playerSockets[1] = socket.id;
                 console.log(`Player 1 (${socket.user.username}) reconnected to room ${roomId}`);
@@ -559,24 +512,17 @@ io.on('connection', (socket) => {
                 gameData.playerSockets[2] = socket.id;
                 console.log(`Player 2 (${socket.user.username}) reconnected to room ${roomId}`);
             }
-            // Joining a waiting lobby as Player 2
             else if (gameData.waiting) {
-                // If the game is waiting, and we are not a reconnecting player (checked above),
-                // then we are the second player.
                 gameData.playerSockets[2] = socket.id;
                 gameData.playerUsernames[2] = socket.user.username;
-                gameData.waiting = false; // Game is starting
+                gameData.waiting = false;
                 console.log(`Player 2 (${socket.user.username}) joined. Starting game ${roomId}...`);
                 startGame(roomId);
             }
         }
-
-        // Remove old logic that relied on !activeGames.has(roomId) for start
-        // because now we always have it in waiting state.
     });
 
     socket.on('push_code', ({ code, stack, cooldownCode, roomId }) => {
-        // Note: roomId might need to be passed or inferred from connectedUsers
         const userData = connectedUsers.get(socket.id);
         const targetRoomId = roomId || userData.roomId;
 
@@ -599,7 +545,7 @@ io.on('connection', (socket) => {
                 code,
                 cooldownCode,
                 stack: stack || [],
-                cooldownUntil: Date.now() + 3000 // 3 seconds cooldown
+                cooldownUntil: Date.now() + 3000
             };
             socket.emit('code_pushed', { success: true, playerNum });
             console.log(`Player ${playerNum} code updated for room ${targetRoomId}`);
@@ -610,18 +556,11 @@ io.on('connection', (socket) => {
     });
 
     socket.on('compile_code', async ({ code }, callback) => {
-        // We need an instance of PythonBridge. We can use one from an active game or create a temp one.
-        // Since PythonBridge is stateless (except temp dir), we can create a new one or reuse.
-        // But activeGames might not have one if not started.
-        // Let's create a temporary one or use a singleton.
-        // For now, I'll instantiate one if needed, but better to reuse.
-        // I'll grab one from activeGames if available, or create new.
         const userData = connectedUsers.get(socket.id);
         let bridge = null;
         if (userData && userData.roomId && activeGames.has(userData.roomId)) {
             bridge = activeGames.get(userData.roomId).pythonBridge;
         } else {
-            // Fallback
             const PythonBridge = require('./game_engine/PythonBridge');
             bridge = new PythonBridge();
         }
@@ -655,11 +594,9 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Message with 'to' address
     socket.on('send_message', ({ to, message }) => {
         console.log(`Message from ${socket.user.username} to ${to}: ${message}`);
 
-        // 'to' can be a socketId or 'room' (broadcast to room)
         if (to && io.sockets.sockets.get(to)) {
             io.to(to).emit('receive_message', {
                 from: socket.user.username,
@@ -683,13 +620,16 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.user.username}`);
         connectedUsers.delete(socket.id);
-        // Handle game cleanup if needed
     });
 });
 
-// SPA Fallback: Serve index.html for any other requests
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    const indexPath = path.join(__dirname, 'public', 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        res.send('Backend is running. For frontend, run "npm run dev" in frontend directory.');
+    }
 });
 
 server.listen(PORT, '0.0.0.0', () => {
