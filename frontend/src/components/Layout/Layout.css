@@ -1,0 +1,19 @@
+.tui-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    /* Fill #root */
+    background: var(--tui-bg);
+    overflow: hidden;
+}
+
+.tui-main {
+    flex-grow: 1;
+    height: 100%;
+    /* Ensure main takes full height */
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    /* Enables child to fill it */
+    flex-direction: column;
+}

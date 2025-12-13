@@ -1,0 +1,23 @@
+.character-container {
+    position: absolute;
+    bottom: 5%;
+    width: 100px;
+    height: 130px;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+.character-sprite {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.debug-pos {
+    position: absolute;
+    top: -20px;
+    color: white;
+    background: black;
+}

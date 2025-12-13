@@ -1,0 +1,78 @@
+.hud-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    color: #0f0;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.hud-left,
+.hud-right {
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.hud-right {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.hud-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.player-label {
+    font-weight: bold;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #0f0;
+    width: 100%;
+}
+
+.points-display {
+    font-size: 1.5rem;
+    color: #ff0;
+}
+
+.timer-box {
+    border: 2px solid #0f0;
+    padding: 0.5rem 1rem;
+    text-align: center;
+    background: #000;
+}
+
+.timer-label {
+    display: block;
+    font-size: 0.8rem;
+    color: #0a0;
+}
+
+.timer-value {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.countdown-active {
+    color: #ff4444;
+    /* Red for countdown */
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}

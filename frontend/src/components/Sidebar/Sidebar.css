@@ -1,0 +1,51 @@
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    background: var(--tui-panel-bg);
+    border-right: 1px solid var(--tui-border);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.sidebar.closed {
+    width: 50px;
+}
+
+.sidebar.open {
+    width: 200px;
+}
+
+.sidebar-icon {
+    padding: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    color: var(--tui-primary);
+    font-family: var(--tui-font);
+    font-weight: bold;
+}
+
+.sidebar-icon:hover {
+    background: var(--tui-primary);
+    color: var(--tui-bg);
+}
+
+.sidebar-label {
+    margin-left: 1rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.sidebar.open .sidebar-label {
+    opacity: 1;
+}
+
+.sidebar-spacer {
+    flex-grow: 1;
+}

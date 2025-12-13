@@ -1,0 +1,77 @@
+:root {
+  --tui-bg: #050510;
+  --tui-panel-bg: #0a0a1a;
+  --tui-primary: #00ff9d;
+  --tui-secondary: #ff0055;
+  --tui-text: #e0e0e0;
+  --tui-dim: #666666;
+  --tui-border: #00ff9d;
+  --tui-font: 'Courier New', monospace;
+  --tui-radius: 12px;
+}
+
+body {
+  background-color: var(--tui-bg);
+  color: var(--tui-text);
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tui-panel {
+  border: 1px solid var(--tui-dim);
+  background-color: var(--tui-panel-bg);
+  padding: 1rem;
+  margin: 0.5rem;
+  box-shadow: 0 0 10px rgba(0, 255, 157, 0.1);
+  border-radius: var(--tui-radius);
+}
+
+.tui-btn {
+  background: transparent;
+  border: 1px solid var(--tui-primary);
+  color: var(--tui-primary);
+  padding: 0.5rem 1rem;
+  font-family: var(--tui-font);
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: var(--tui-radius);
+}
+
+.tui-btn:hover {
+  background: var(--tui-primary);
+  color: var(--tui-bg);
+  box-shadow: 0 0 10px var(--tui-primary);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--tui-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--tui-dim);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--tui-primary);
+}
+
+.tui-input {
+  background: var(--tui-bg);
+  border: 1px solid var(--tui-dim);
+  color: var(--tui-text);
+  padding: 0.5rem;
+  font-family: var(--tui-font);
+  margin-bottom: 1rem;
+  width: 100%;
+  border-radius: var(--tui-radius);
+}
+
+.tui-input:focus {
+  border-color: var(--tui-primary);
+  outline: none;
+  box-shadow: 0 0 5px var(--tui-primary);
+}

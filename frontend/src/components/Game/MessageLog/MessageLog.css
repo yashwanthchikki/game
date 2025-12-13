@@ -1,0 +1,56 @@
+.message-log-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.log-header {
+    display: flex;
+    border-bottom: 1px solid #0f0;
+    padding: 0.5rem;
+    background: #111;
+    font-weight: bold;
+    color: #0f0;
+}
+
+.col-header {
+    flex: 1;
+    text-align: center;
+}
+
+.log-content {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+
+.log-row {
+    display: flex;
+    border-bottom: 1px solid #333;
+    padding: 0.25rem 0;
+}
+
+.log-cell {
+    flex: 1;
+    text-align: center;
+    font-size: 0.8rem;
+}
+
+.log-cell.p1-sent {
+    color: #88c;
+}
+
+.log-cell.p2-sent {
+    color: #c88;
+}
+
+.log-cell.p1-res {
+    color: #aaf;
+    font-weight: bold;
+}
+
+.log-cell.p2-res {
+    color: #faa;
+    font-weight: bold;
+}

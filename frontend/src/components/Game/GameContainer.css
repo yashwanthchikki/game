@@ -1,0 +1,174 @@
+.game-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    background: #000;
+    color: var(--tui-text);
+    overflow: hidden;
+}
+
+/* TOP SECTION: Stats - Arena - Stats */
+.game-top-section {
+    flex: 35;
+    /* Relative height 35% */
+    display: flex;
+    border-bottom: 2px solid var(--tui-border);
+    background: #050505;
+    min-height: 0;
+    /* Critical for flex shrinking */
+}
+
+.player-stats-panel {
+    width: 20%;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #333;
+}
+
+.player-stats-panel.right {
+    border-right: none;
+    border-left: 1px solid #333;
+}
+
+.player-title {
+    color: var(--tui-primary);
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.player-score {
+    text-align: center;
+    font-size: 1.2rem;
+    color: #ffcc00;
+    margin-bottom: 1rem;
+}
+
+.arena-center-panel {
+    flex: 1;
+    /* Takes remaining space (approx 60%) */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    /* Prevent spillover */
+    min-width: 0;
+    /* Allow shrink */
+}
+
+.arena-header-overlay {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    flex-shrink: 0;
+}
+
+.game-timer {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--tui-primary);
+    background: rgba(0, 0, 0, 0.8);
+    padding: 0.2rem 1rem;
+    border: 1px solid var(--tui-primary);
+}
+
+.arena-viewport {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+    /* Crucial for flex item height scaling */
+}
+
+.arena-footer-overlay {
+    width: 100%;
+    height: 60px;
+    /* Space for cards */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 0.5rem;
+    flex-shrink: 0;
+}
+
+/* BOTTOM SECTION: IDE & Logs */
+.game-bottom-section {
+    flex: 65;
+    /* Relative height 65% */
+    display: flex;
+    background: #000;
+    min-height: 0;
+    /* Critical for flex shrinking */
+}
+
+.ide-wrapper {
+    flex: 3;
+    height: 100%;
+    border-right: 2px solid var(--tui-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    /* Allow shrink */
+}
+
+.log-wrapper {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #080808;
+    min-width: 0;
+    /* Allow shrink */
+}
+
+/* Modal Overlay (Game Over / Code View) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background: #000;
+    border: 2px solid var(--tui-primary);
+    padding: 2rem;
+    max-width: 80%;
+    max-height: 80%;
+    overflow: auto;
+    color: var(--tui-text);
+}
+
+.game-over-content {
+    text-align: center;
+}
+
+.game-over-content h2 {
+    color: red;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.game-over-content h3 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+}
